@@ -1,10 +1,12 @@
-name: Build Obfuscated BPB Panel
+name: Build Obfuscate BPB Panel
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   schedule:
-    - cron: "0 1 * * *" # Daily at 1:00 AM
+        # Runs everyday at 1:00 AM
+        - cron: "0 1 * * *"
 
 permissions:
   contents: write
@@ -12,26 +14,44 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out the code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: latest
-          cache: npm # 添加缓存加速依赖安装
+          node-version: "latest"
 
-      - run: npm install -g javascript-obfuscator
-        name: Install javascript-obfuscator
+      - name: Install dependencies
+        run: |
+          npm install -g javascript-obfuscator
 
-      - run: curl -L -o origin.js https://raw.githubusercontent.com/bia-pain-bache/BPB-Worker-Panel/main/build/unobfuscated-worker.js
-        name: Download BPB worker script
+      - name: Clone BPB workjs
+        run: |
+          wget -O origin.js https://raw.githubusercontent.com/bia-pain-bache/BPB-Worker-Panel/refs/heads/main/build/unobfuscated-worker.js
 
-      - run: javascript-obfuscator origin.js -o _worker.js --compact --control-flow-flattening --control-flow-flattening-threshold 1 --dead-code-injection --dead-code-injection-threshold 1 --identifier-names-generator hexadecimal --rename-globals --string-array --string-array-encoding rc4 --string-array-threshold 1 --transform-object-keys --unicode-escape-sequence
-        name: Obfuscate script
+      - name: Obfuscate BPB worker js
+        run: |
+          javascript-obfuscator origin.js --output _worker.js \
+          --compact true \
+          --control-flow-flattening true \
+          --control-flow-flattening-threshold 1 \
+          --dead-code-injection true \
+          --dead-code-injection-threshold 1 \
+          --identifier-names-generator hexadecimal \
+          --rename-globals true \
+          --string-array true \
+          --string-array-encoding 'rc4' \
+          --string-array-threshold 1 \
+          --transform-object-keys true \
+          --unicode-escape-sequence true
 
-      - uses: stefanzweifel/git-auto-commit-action@v5
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
           branch: main
-          commit_message: ':arrow_up: Update BPB panel'
-          commit_author: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
-          push_options: --set-upstream
+          commit_message: ':arrow_up: update latest bpb panel'
+          commit_author: 'github-actions[bot] <github-actions[bot]@users.noreply.github.com>'
+          push_options: '--set-upstream'
